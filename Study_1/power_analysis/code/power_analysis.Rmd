@@ -290,7 +290,8 @@ ggplot(plot_dat, aes(x = x, y = predicted, group = Condition)) +
         scale_x_continuous(limits = c(-2, 2),
                            breaks = c(seq(-2, 2, .5)), 
                            labels = c("Low", " ", " ", " ", "", "", " ", " ", "High")) +
-        scale_y_continuous(labels = scales::comma) + 
+        scale_y_continuous(labels = scales::comma,
+                           breaks = c(seq(37000, 43000, 1000))) + 
         xlab("Developmental experiences of social support") + 
         ylab("Cumulative work (W)") +
         guides(colour = guide_legend(title="Experimental condition")) +

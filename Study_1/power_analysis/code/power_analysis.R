@@ -118,8 +118,9 @@ w_condition_simulation = ggplot(w_data, aes(condition, w)) +
                           geom_violin() +
                           geom_boxplot(show.legend = FALSE) +
                           scale_x_discrete(labels = c("Control", "Support")) +
-                          scale_y_continuous(labels = scales::comma) + 
-                          xlab("Social support condition") + 
+                          scale_y_continuous(labels = scales::comma,
+                                             breaks = c(seq(33000, 47000, 1000))) + 
+                          xlab("Experimental condition") + 
                           ylab("Cumulative work (W)") +
                           avenir_theme
 
@@ -320,20 +321,27 @@ data = data %>% mutate(w = overall_intercept + rand_int +
 w_ela_int_mod = lmer(w ~ condition * early_life_adversity + session_number + (1 | participant), data = data)
 summary(w_ela_int_mod)
 
-#plot the model
+#get model data
 plot_dat = plot_model(w_ela_int_mod, type = "pred", terms = c("early_life_adversity", "condition"))
 plot_dat = plot_dat$data
 plot_dat$Condition = plot_dat$group_col
 plot_dat$Condition = ifelse(plot_dat$Condition == "control", "Control",
                             ifelse(plot_dat$Condition =="support", "Support", NA))
 
+### ### ###
+
+#load model data (so that the description of the model results in the PDF document are consistent)
+plot_dat = read.csv("../data/w_social_support_desp_interaction_data_sim_model_data_for_plotting.csv")
+
+#plot the model
 w_ela_int_simulation = ggplot(plot_dat, aes(x = x, y = predicted, group = Condition)) + 
                         geom_line(aes(color = Condition)) +
                         geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
                         scale_x_continuous(limits = c(-2, 2),
                                            breaks = c(seq(-2, 2, .5)), 
                                            labels = c("Low", " ", " ", " ", "", "", " ", " ", "High")) +
-                        scale_y_continuous(labels = scales::comma) + 
+                        scale_y_continuous(labels = scales::comma,
+                                           breaks = c(seq(37000, 43000, 1000))) + 
                         xlab("Developmental exerperiences of social support") + 
                         ylab("Cumulative work (W)") +
                         guides(colour = guide_legend(title="Experimental condition")) +
