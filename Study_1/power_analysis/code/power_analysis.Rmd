@@ -1,0 +1,363 @@
+---
+title: "Social support effects on subjective effort and fatigue, energy expenditure, and outputs during physical exercise: Study 1 power analysis"
+output: html_document
+knit: (function(inputFile, encoding) {rmarkdown::render(inputFile, encoding = encoding, output_dir = "../") })
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(extrafont)
+library(faux)
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(ggplot2)
+
+### GRAPH THEMES ###
+
+#fonts
+quartzFonts(avenir = c("Avenir Book", "Avenir Black", "Avenir Book Oblique", "Avenir Black Oblique"))
+
+#theme
+header_size = 10
+axis_size = 10
+
+#theme for plots
+avenir_theme = theme(text=element_text(size=header_size,family='avenir'),
+                     axis.text.x = element_text(color = 'black', size = axis_size, vjust = 1),
+                     axis.text.y = element_text(color = 'black', size = axis_size),
+                     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), face = "bold"),
+                     axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 0, l = 0), face = "bold"),
+                     panel.background = element_blank(),
+                     panel.grid.major.x = element_line(color = '#e7e7e7'),
+                     panel.grid.major.y = element_line(color = '#e7e7e7'),
+                     legend.key = element_blank(),
+                     legend.title = element_text(color = 'black', size = axis_size, face = "bold"),
+                     plot.title = element_text(hjust = 0.5, face = "bold"))
+
+#set the font
+par(family = 'avenir')
+
+```
+
+### Arran J Davis
+##### Institute of Human Sciences, University of Oxford
+##### arran.davis@anthro.ox.ac.uk | davis.arran@gmail.com
+##### 6 September 2022
+
+## Introduction
+
+This study will employ a within subjects design to manipulate participants' perceptions of social support during a rowing trial to exhaustion. The rowing trials will consist of participants rowing at the power output associated with their ventilatory break point (established during a preliminary incremental ramp test) until volitional exhaustion or until the participant can no longer meet the required power output or stroke rate (set to 28 strokes per minute) for five consecutive strokes, whichever comes first. 
+
+The main outcome variable of interest is the cumulative work (`cumulative_work`) produced during the social support and control condition rowing trials. Cumulative work will be a single number, expressed as the total Wattage (W) produced during the trial, which will be calculated by adding up the W of every stroke completed during the trial.
+
+Secondary outcome measures will include total energy expenditure (`ee`; as measured by total oxygen consumption, VO~2~, during the trial, expressed as a proportion of the participant's body weight), perceived fatigue (`fatigue`; 0-10 scale) and perceived effort (`effort`; 0-10 scale) during the rowing trials to exhaustion. Perceived fatigue (0-10 scale) and perceived effort ( 0-10 scale) will be measured at fixed intervals (every 50 s and 65 s, respectively) throughout the trial, meaning that there will also be a measurement time variable (`measurement_number`) that will be used as a predictor for these variables.
+
+The main predictor variable is the social support condition (`condition`). A secondary predictor variable will be participants' scores on an a developmental experiences of social support measure (`developmental_support`); specifically, we are interested in how observed social support effects on `cumulative_work` are moderated by (interact with) the `developmental_support` variable.
+
+Participants will be exposed to both the support and control experimental conditions; the design will be counterbalanced and the order in which participants complete each experimental condition (`session_number`) will be randomised. Before they complete the experimental conditions, participants will complete the rowing trial to exhaustion; this session will allow participants to become acquainted with the task.
+
+## Hypotheses, data simulations, and power analyses
+
+### Social support effects on cumulative work in the rowing trials to exhaustion
+
+#### Effects from previous research
+No previous studies have tested social support effects on cumulative work produced during a time to exhaustion trial. Davis et al. (2015) manipulated behavioural synchrony as a cue to group cohesion and support in a warm-up for a timed running trial. They observed that a synchronous (versus asynchronous) warm-up led to a 6.60 s (2.5%) improvement in finishing times for the running trial (the trial had an average duration of about four minutes). Davis et al. (2021) found that a social support cue led to an increase in handgrip force of 0.66 of a percentage point at the highest level of target exercise difficulty (60% of maximum grip strength), 0.51 of a percentage point at the middle level of target exercise difficulty (50% of maximum grip strength), and 0.25 of a percentage point at the highest level of target exercise difficulty (40% of maximum grip strength target).
+
+Other research has manipulated perceptions of fatigue before to exhaustion exercise trials. Greenhouse-Tucknott et al. (2020) induced fatigue via a handgrip task before having participants complete a knee extension time to exhaustion trial. They showed that inducing a psychological state of fatigue through tiring a remote muscle group (the forearm) led to 26.5 s (11.8%) reductions in time to exhaustion on a knee extension test with an average duration of around four minutes.
+
+Finally, Rogerson and Barton (2015) manipulated participants' exercise environments (natural, built, or control) during a time to exhaustion running trial at 85% of participants' VO~2~ max. They observed no effect of condition on energy expenditure or time to exhaustion; time to exhaustion was greater in the natural condition (824 ± 336) versus the control (769 ± 292), but this was not statistically significant, likely owing to high variation in the variable.
+
+The current study will require participants to row at the power output associated with their ventilatory break point until volitional exhaustion or until the participant can no longer meet the required power output (whichever comes first). Given that social support effects on physical outputs increased along with objective exercise difficulty in the Davis et al. (2021) study, we predict that they will be even stronger in the present study, where objective difficulty will be higher. 
+
+#### Estimated effects
+Given previous results (e.g., Davis et al., 2015; Davis et al., 2021, Greenhouse-Tucknott et al., 2020) and the design of the current study, we predict that the _b_-coefficients for `condition` on `cumulative_work` will be between 378 W and 1,890 W, a difference of between 1% and 5% (assuming a mean cumulative work of 37,800 in the control condition). 
+
+
+```{r cumulative work by social support data simulation, echo = FALSE, fig.width = 10, fig.height = 7.5}
+
+#number of participants and observations per condition
+participant_n = 40
+item_n = 1
+
+#model intercept
+overall_intercept = 37800
+
+#fixed effects (2.5%)
+condition_fixed_effect = 378 * 2.5
+order_fixed_effect = 378 * 2.5
+
+#random intercept SD for participants (grouping is at participant level)
+random_intercept_sd = 2500
+condition_random_slope_sd = 300
+order_random_slope_sd = 300
+
+#correlation between random effects
+random_effects_correlation = 0   
+
+#error term standard deviation
+error_sd = 500
+
+#create dataframe
+data = add_random(participant = participant_n, condition = 1) %>%
+       add_within("participant", condition = c("control", "support")) %>%
+       add_between("participant", part_odd_even = c(2, 1), .shuffle = TRUE) %>%
+       add_within("condition.y", session  = c("first", "second")) %>%
+       add_between("participant", gender = c("female", "male"), .prob = c(.3, .7), .shuffle = TRUE) %>%
+       add_between("participant", age = 15:18, .prob = c(.4, .3, .2, .1), .shuffle = TRUE) %>%
+       add_recode("condition.y", "condition_numeric", control = 0, support = 1) %>%
+       add_recode("session", "session_number", first = 1, second = 2) %>%
+       add_ranef("participant", rand_int = random_intercept_sd, 
+                 rand_slope_cond = condition_random_slope_sd,
+                 rand_slope_order = order_random_slope_sd,
+                 .cors = random_effects_correlation) %>%
+       add_ranef(error_term = error_sd)
+
+#remove duplicate rows (this is how the counterbalancing is created)
+data = data %>% dplyr::filter((condition.y == "control" & part_odd_even != session_number | 
+                              (condition.y == "support" & part_odd_even == session_number)))
+
+#rename outcome and transform variables
+data$condition = data$condition.y
+data$participant = as.factor(data$participant)
+
+#drop unneeded columns
+data = data[ , c("participant", "condition",  "condition_numeric", "session_number", "gender", "age", 
+                 "rand_int", "rand_slope_cond", "rand_slope_order",  "error_term")]
+
+#create outcome variable (assuming no effect of age or gender)
+w_data = data %>% mutate(w = overall_intercept + rand_int + 
+                         ((condition_fixed_effect + rand_slope_cond) * condition_numeric) +
+                         ((order_fixed_effect + rand_slope_order) * session_number) +
+                         error_term)
+
+#plot the dataset
+ggplot(w_data, aes(condition, w)) + 
+  geom_violin() +
+  geom_boxplot(show.legend = FALSE) +
+  scale_x_discrete(labels = c("Control", "Support")) +
+  scale_y_continuous(labels = scales::comma) + 
+  xlab("Experimental condition") + 
+  ylab("Cumulative work (W)") +
+  avenir_theme
+
+```
+
+The plotted, simulated data shown above assumed the following parameters; _b_-coefficients for `condition` and `session_number` of 945 (`(37800*.01) * 2.5`) each, an intercept of 37,800 W, a random intercept standard deviation of 2,500, and random slope standard deviations of 300 for both `condition` and `session_number`. The correlation between random effects was set to 0 and the error term SD was set to 500.
+
+#### Data simulations for power analysis
+
+Power analyses were carried out using the `faux` package in R (DeBruine, 2021). Using the dataset described above as a reference, 25,000 simulated sample datasets were created. This was done through sampling different simulated populations of cumulative work (`cumulative_work`) that varied according to sample size (25, 30, 35, 40, 45) and the effect of `condition` (0.5%, 1%, 1.5%, 2%, 2.5% greater scores for `cumulative_work` in the social support condition, as compared to the control condition). Regarding the fixed effect of `session_number`, all simulations assumed 2.5% greater scores for `cumulative_work` in the second experimental session, as compared to the first. For all simulations, the intercept was set to 37,800 W, the random intercept standard deviation was set 2,500, and a random slope standard deviations of 300 was set for both `condition` and `session_number`. The correlation between random effects was set to 0 and the error term SD was set to 500.
+
+For each of the 25,000 simulated datasets, the statistical significance of the `condition` predictor variable on `cumulative_work` was assessed using the following hierarchical linear regression model. 
+
+```{cumulative work support model lmer}
+lmer(cumulative_work ~ condition + session_number + (1 | participant), data = data)
+```
+
+Social support condition (`condition`) was the main fixed effect of interest, and the order in which the experimental conditions were presented (`session_number`) was included as a fixed effect covariate. Participant (`participant`) was the level-two random effect. The model was fit using the `lme4` package (Bates et al., 2014). Data simulation indicated that model convergence was not possible with more complex random effects structures (e.g., random slopes for `condition`).
+
+The power analyses reported below were calculated as the frequency of the 25,000 _p_-values that were less than 0.05 for the `condition` _b_-coefficient that compared participants' cumulative work (`cumulative_work`) in the social support and control conditions.
+
+#### Power analysis results
+
+```{r power analysis for social support effect on cumulative work, echo = FALSE, fig.width = 10, fig.height = 7.5}
+
+#load the simulation data
+simulations = read.csv("../data/w_social_support_power_analysis_data_sim.csv")
+
+#create dataset to plot power analysis for condition main effect
+sim_results_support_w = filter(simulations, effect == "fixed", term == "conditionsupport") %>%
+                          dplyr::group_by(condition_fixed_effect, participant_n) %>% 
+                          dplyr::summarise(power = mean(p.value < .05), .groups = "drop")
+
+#order the `condition_fixed_effect` factor
+sim_results_support_w$condition_fixed_effect = ordered(sim_results_support_w$condition_fixed_effect, c("189", "378", "567", "756", "945"))
+
+#plot power analysis
+ggplot(aes(condition_fixed_effect, participant_n, fill = power), data = sim_results_support_w) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", power)), color = "black", size = 5) +
+  scale_fill_viridis_c(name = "Power",
+                       limits = c(0, 1), 
+                       breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+                       labels = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  scale_x_discrete(labels = c("0.5%", "1.0%", "1.5%", "2.0%", "2.5%")) + 
+  scale_y_continuous(breaks = c(25, 30, 35, 40, 45)) +
+  xlab("Percentage increase in cumulative work in social support condition") + 
+  ylab("Participant sample size") +
+  avenir_theme
+
+```
+
+Results suggest that at least 40 participants are needed to have sufficient power (0.81) to detect a 1% difference between the social support and control conditions in cumulative work; only 25 participants would be needed to have sufficient power (0.92) to detect a difference of 1.5% in cumulative work between the conditions.
+
+### Interaction between social support and developmental experiences of social support on cumulative work
+
+#### Effects from previous research
+
+No previous studies have tested how responses to social support during exercise are moderated by developmental experiences of social support.
+
+#### Estimated effects
+
+We predict that the _b_-coefficient for the social support (`condition`) by developmental experiences of social support (`developmental_support`) interaction on `cumulative_work` will be between 100 and 300.
+
+The plotted, simulated data below assumed the following parameters; a _b_-coefficient for the `condition` by `developmental_support` interaction of 250, effects of `condition` and `session_number` of 945 on cumulative work (a 2.5% difference between each conditions and session, respectively), an effect of `developmental_support` of 0, an intercept of 37,800 W, a random intercept standard deviation of 2,500, and random slope standard deviations of 300 for `condition` and `session_number`, 100 for `developmental_support` and 50 for the `condition` by `developmental_support` interaction. The correlation between random effects was set to 0 and the error term SD was set to 200.
+
+```{r condition by developmental experiences of social support interaction on cumulative work simulation, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 7.5}
+
+#number of participants and observations per condition
+participant_n = 40
+item_n = 1
+
+#model intercept
+overall_intercept = 37800
+
+#fixed effects (2.5%)
+condition_fixed_effect = 378 * 2.5
+order_fixed_effect = 378 * 2.5
+ela_fixed_effect = 0.0
+cond_ela_interaction_fixed_effect = 250
+
+#random intercept SD for participants (grouping is at participant level)
+random_intercept_sd = 2500
+condition_random_slope_sd = 300
+order_random_slope_sd = 300
+ela_random_slope = 100
+cond_ela_interaction_sd = 50
+
+#correlation between random effects
+random_effects_correlation = 0   
+
+#error term standard deviation
+error_sd = 200
+
+#create dataframe
+data = add_random(participant = participant_n, condition = 1) %>%
+       add_within("participant", condition = c("control", "support")) %>%
+       add_between("participant", part_odd_even = c(2, 1), .shuffle = TRUE) %>%
+       add_within("condition.y", session  = c("first", "second")) %>%
+       add_between("participant", early_life_adversity = c(rnorm(40, 0, 1))) %>%
+       add_recode("condition.y", "condition_numeric", control = 0, support = 1) %>%
+       add_recode("session", "session_number", first = 1, second = 2) %>%
+       add_ranef("participant", rand_int = random_intercept_sd, 
+                 rand_slope_cond = condition_random_slope_sd,
+                 rand_slope_order = order_random_slope_sd,
+                 rand_slope_ela = ela_random_slope,
+                 rand_slope_interaction = cond_ela_interaction_sd,
+                .cors = random_effects_correlation) %>%
+       add_ranef(error_term = error_sd)
+
+#remove duplicate rows (this is how the counterbalancing is created)
+data = data %>% dplyr::filter((condition.y == "control" & part_odd_even != session_number | 
+                                 (condition.y == "support" & part_odd_even == session_number)))
+
+#rename outcome and transform variables
+data$condition = data$condition.y
+data$participant = as.factor(data$participant)
+data$early_life_adversity = as.numeric(as.character(data$early_life_adversity))
+
+#drop unneeded columns
+data = data[ , c("participant", "condition", "condition_numeric", "session_number", "early_life_adversity", 
+                 "rand_int", "rand_slope_cond", "rand_slope_order", "rand_slope_ela", "rand_slope_interaction",  "error_term")]
+
+#create outcome variable (assuming no effect of age or gender)
+data = data %>% mutate(w = overall_intercept + rand_int + 
+                         ((condition_fixed_effect + rand_slope_cond) * condition_numeric) +
+                         ((order_fixed_effect + rand_slope_order) * session_number) +
+                         ((ela_fixed_effect + rand_slope_ela) * early_life_adversity) +
+                         ((cond_ela_interaction_fixed_effect + rand_slope_interaction) * condition_numeric * early_life_adversity) +
+                         error_term)
+
+#run model
+w_ela_int_mod = lmer(w ~ condition * early_life_adversity + session_number + (1 | participant), data = data)
+
+#plot the model
+plot_dat = sjPlot::plot_model(w_ela_int_mod, type = "pred", terms = c("early_life_adversity", "condition"))
+plot_dat = plot_dat$data
+plot_dat$Condition = plot_dat$group_col
+plot_dat$Condition = ifelse(plot_dat$Condition == "control", "Control",
+                            ifelse(plot_dat$Condition =="support", "Support", NA))
+
+#load model data (so that the description of the model results in this document can be consistent)
+plot_dat = read.csv("../data/w_social_support_desp_interaction_data_sim_model_data_for_plotting.csv")
+
+#plot the model
+ggplot(plot_dat, aes(x = x, y = predicted, group = Condition)) + 
+        geom_line(aes(color = Condition)) +
+        geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+        scale_x_continuous(limits = c(-2, 2),
+                           breaks = c(seq(-2, 2, .5)), 
+                           labels = c("Low", " ", " ", " ", "", "", " ", " ", "High")) +
+        scale_y_continuous(labels = scales::comma) + 
+        xlab("Developmental experiences of social support") + 
+        ylab("Cumulative work (W)") +
+        guides(colour = guide_legend(title="Experimental condition")) +
+        avenir_theme
+
+```
+
+In this scenario, a `condition` by `developmental_support` interaction _b_-coefficient of 250 would lead to a difference of around 330 W in `cumulative_work` (`support` - `control`) for individuals scoring low on developmental experiences of social support (2 _SD_ below the overall mean), a difference of around 1,030 W in `cumulative_work` (`support` - `control`) for individuals scoring average on developmental experiences of social support, and a difference of around 1,740 W in `cumulative_work` (`support` - `control`) for individuals scoring high on developmental experiences of social support (2 _SD_ above the overall mean).
+
+#### Data simulations for power analysis
+
+Power analyses were carried out using the `faux` package in R (DeBruine, 2021). Using the dataset described above as a reference, 25,000 simulated sample datasets were created. This was done through sampling different simulated populations of cumulative work (`cumulative_work`) that varied according to sample size (25, 30, 35, 40, 45) and the size of the `condition` by `developmental_support` interaction (model _b_-coefficient of 100, 150, 200, 250, 300). Regarding fixed effects of `condition` and `session_number`, all simulations assumed 2.5% greater scores for `cumulative_work` in the social support condition, as compared to the control, and in the second experimental session, as compared to the first. For all simulations, the intercept was set to 37,800 W, the random intercept standard deviation was set 2,500, and a random slope standard deviations of 300 was set for both `condition` and `session_number`. The correlation between random effects was set to 0 and the error term SD was set to 200
+
+For each of the 25,000 simulated datasets, the statistical significance of the `condition` by `developmental_support` interaction on `cumulative_work` was assessed using the following hierarchical linear regression model. 
+
+```{W support by early life adversity model lmer}
+lmer(cumulative_work ~ condition * developmental_support + session_number + (1 | participant), data = data)
+```
+
+The `condition` by `developmental_support` interaction effect was the main effect of interest, and the order in which the experimental conditions were presented (`session_number`) was included as a fixed effect covariate. Participant (`participant`) was the level-two random effect. The model was fit using the `lme4` package. Data simulation indicated that model convergence was not possible with more complex random effects structures (e.g., random slopes for `condition`).
+
+The power analysis reported below were calculated as the frequency of the 25,000 _p_-values that were less than 0.05 for the `condition` by `developmental_support` interaction _b_-coefficient with cumulative work (`cumulative_work`) as the outcome variable.
+
+#### Power analysis results
+
+```{r power analysis for experimental condition by developmental experiences of social support interaction effect on cumulative work, echo = FALSE, fig.width = 10, fig.height = 7.5}
+
+#load the simulation data
+simulations = read.csv("../data/w_social_support_desp_interaction_power_analysis_data_sim.csv")
+
+#create dataset to plot power analysis for experimental condition by developmental experiences of social support interaction effect on cumulative work
+w_support_ela_int_simulation = filter(simulations, effect == "fixed", term == "conditionsupport:early_life_adversity") %>% 
+                                dplyr::group_by(cond_ela_interaction_fixed_effect, participant_n) %>% 
+                                dplyr::summarise(power = mean(p.value < .05), .groups = "drop")
+
+#order the `cond_ela_interaction_fixed_effect` factor
+w_support_ela_int_simulation$cond_ela_interaction_fixed_effect = ordered(w_support_ela_int_simulation$cond_ela_interaction_fixed_effect, 
+                                                                         c("100", "150", "200", "250", "300"))
+
+#plot power analysis
+x_axis_text = expression(bold(paste("Model ", bolditalic("b"), "-coefficient for experimental condition by developmental experiences of social support interaction on cumulative work")))
+ggplot(aes(cond_ela_interaction_fixed_effect, participant_n, fill = power), data = w_support_ela_int_simulation) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", power)), color = "black", size = 5) +
+  scale_y_continuous(breaks = c(25, 30, 35, 40, 45)) +
+  scale_fill_viridis_c(name = "Power",
+                       limits = c(0, 1), 
+                       breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+                       labels = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  xlab(x_axis_text) + 
+  ylab("Participant sample size") +
+  avenir_theme
+
+```
+
+Results suggest that 40 participants are needed to have sufficient power (0.81) to detect a `condition` by `developmental_support` interaction on cumulative work (`cumulative_work`) that has a _b_-coefficient of 250.
+
+### Citations
+
+Bates, D., Maechler, M., Bolker, B., & Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4. _R package version_, _1_(7), 1-23. 
+
+Davis, A. J., Crittenden, B., & Cohen, E. (2021). Effects of social support on performance outputs and perceived difficulty during physical exercise. _Physiology & Behavior_, _239_, 113490.
+
+Davis, A., Taylor, J., & Cohen, E. (2015). Social Bonds and Exercise: Evidence for a Reciprocal Relationship. _Plos One_, _10_(8), e0136705. doi:10.1371/journal.pone.0136705
+
+DeBruine L (2021). _faux: Simulation for Factorial Designs_. doi: 10.5281/zenodo.2669586, R package version 1.1.0, https://debruine.github.io/faux/.
+
+Greenhouse‐Tucknott, A., Wrightson, J. G., Raynsford, M., Harrison, N., & Dekerle, J. (2020). Interactions between perceptions of fatigue, effort, and affect decrease knee extensor endurance performance following upper body motor activity, independent of changes in neuromuscular function. _Psychophysiology_, _57_(9), e13602. 
+
+Rogerson, M., & Barton, J. (2015). Effects of the visual exercise environments on cognitive directed attention, energy expenditure and perceived exertion. _International Journal of Environmental Research and Public Health_, _12_(7), 7321-7336.
