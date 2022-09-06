@@ -330,7 +330,7 @@ plot_dat$Condition = ifelse(plot_dat$Condition == "control", "Control",
 
 ### ### ###
 
-#load model data (so that the description of the model results in the PDF document are consistent)
+#load model data (so that the description of the model results in the HTML document are consistent)
 plot_dat = read.csv("../data/w_social_support_desp_interaction_data_sim_model_data_for_plotting.csv")
 
 #plot the model
