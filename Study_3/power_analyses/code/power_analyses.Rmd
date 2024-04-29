@@ -1,0 +1,234 @@
+---
+title: "Social support effects on subjective effort and fatigue, energy expenditure, and outputs during physical exercise: Study 3 power analyses"
+output: html_document
+knit: (function(inputFile, encoding) {rmarkdown::render(inputFile, encoding = encoding, output_dir = "../") })
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(extrafont)
+library(faux)
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(ggplot2)
+library(sjPlot)
+library(tidyr)
+library(broom.mixed)
+library(purrr)
+library(censReg)
+library(plm)
+library(raincloudplots)
+
+### GRAPH THEMES ###
+
+#fonts
+quartzFonts(avenir = c("Avenir Book", "Avenir Black", "Avenir Book Oblique", "Avenir Black Oblique"))
+
+#theme
+header_size = 10
+axis_size = 10
+
+#theme for plots
+avenir_theme = theme(text=element_text(size=header_size,family='avenir'),
+                     axis.text.x = element_text(color = 'black', size = axis_size, vjust = 1),
+                     axis.text.y = element_text(color = 'black', size = axis_size),
+                     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), face = "bold"),
+                     axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 0, l = 0), face = "bold"),
+                     panel.background = element_blank(),
+                     panel.grid.major.x = element_line(color = '#e7e7e7'),
+                     panel.grid.major.y = element_line(color = '#e7e7e7'),
+                     legend.key = element_blank(),
+                     legend.title = element_text(color = 'black', size = axis_size, face = "bold"),
+                     plot.title = element_text(hjust = 0.5, face = "bold"))
+
+#set the font
+par(family = 'avenir')
+
+```
+
+### Arran J Davis
+##### Institute of Human Sciences, University of Oxford
+##### arran.davis@anthro.ox.ac.uk | davis.arran@gmail.com
+##### 8 April 2024
+
+## Introduction
+
+This study will employ a within subjects design to manipulate participants' perceptions of social support during a rowing trial. The rowing trial will consist of two segments. In Segment 1, participants will row at a fixed pace (established during a preliminary incremental ramp test) for 20 minutes. They will then rest for five minutes before completing a maximum effort 2 km time trial.
+
+Outcome measures will include perceived fatigue (`fatigue`; 0-10 scale) and perceived effort (`effort`; 0-10 scale) during the rowing trials to exhaustion. Perceived fatigue (0-10 scale) and perceived effort ( 0-10 scale) will be measured at fixed intervals (every 35 s and 50 s, respectively) throughout both segments of the rowing trial, meaning that there will also be a measurement time variable (`measurement_number`) that will be used as a predictor for these variables. A secondary outcome is also energy expenditure, but this variable is not part of these analyses; the effects of the experimental conditions on this variable are hypothesised to be the same as the effects of the experimental conditions on rowing outputs.
+
+The main predictor variable is the experimental condition (`condition`). Participants will be exposed to three experimental conditions; (1) a condition in which they see a photo of a support figure (a friend, family member, or partner) while rowing, (2) a condition in which they see a photo of a support figure while rowing _and_ they warm-up with a teammate, and (3) a control condition where they see a photo of a stranger (matched to the support figure by age, gender, and ethnicity). The design will be counterbalanced and the order in which participants complete each experimental condition (`session_number`) will be randomised. Before they complete the experimental conditions, participants will complete the rowing trial two separate times as a means of assessing how reliably they can perform the 2 km time trial (Segment 2); only those participants who can reliably perform the 2 km time trial will do the experimental conditions.
+
+## Hypotheses, data simulations, and power analyses
+
+### Social support effects on 2 km rowing times
+
+Study 1 of this project showed that time to task failure in a rowing trial to exhaustion was on average 16.8% higher a similar social support condition, as compared to a similar control condition. To be conservative, we will use effect sizes more than half this size (7.5%) as the upper limit for possible effect sizes in the following power analysis. Our power analyses are for the social support condition in which participants see a photo of a support figure while rowing to the control condition, as this social support condition is hypothesised to have an equivalent or smaller effect than the social support condition involving seeing the photo of a support figure while rowing _and_ warming-up with a teammate.
+
+Shown below are simulated experimental data for 25 participants, each with 20 fatigue measures in Segment 1 of each condition (the total number when measured every 50 s over a 20 min span). Data are drawn from a population with a performance-enhancing (negative) effect of the support condition on participants' 2 km rowing trial times, such that times were 2.5% faster in the social support condition.
+
+```{r times in 2 km rowing trial by social support data simulation, echo = FALSE, warnings = FALSE, message = FALSE, fig.width = 10, fig.height = 7.5}
+
+#load the data
+t_data = read.csv("../data/social_support_effect_on_2km_times_sample_plot_data.csv")
+
+### PLOT DATA ###
+
+#prepare data for plotting (sort by condition and participant)
+t_data_sorted = t_data[with(t_data, order(condition, participant)),]
+time_plot_data = data_1x1(array_1  = t_data_sorted$time[1:26],
+                          array_2  = t_data_sorted$time[27:52],
+                          jit_distance = .09,
+                          jit_seed = 321)
+
+#plot and save the data (citation: https://github.com/jorvlan/open-visualizations)
+time_plot = raincloud_1x1_repmes(data = time_plot_data,
+                                 colors = (c('#56B4E9', '#009E73')),
+                                 fills = (c('#56B4E9', '#009E73')),
+                                 line_color = 'gray',
+                                 line_alpha = 2,
+                                 size = 6,
+                                 alpha = .6,
+                                 align_clouds = FALSE) +
+              scale_y_continuous(label = c("7:15", "7:30", "7:45", "8:00", "8:15"), breaks = c(seq(7.25, 8.25, 0.25)), limits = c(7.25, 8.25)) +
+              scale_x_continuous(breaks = c(1,2), labels = c("Control", "Support")) +
+              xlab("Experimental condition") +  
+              ylab("Time for 2 km rowing trial (min)") +
+              avenir_theme
+
+time_plot
+
+```
+
+#### Data simulations for power analysis
+
+Power analyses were carried out using the `faux` package in R (DeBruine, 2021). Using the dataset described above as a reference, 36,000 simulated sample datasets were created. This was done through sampling different simulated experimental results for the 2 km time variable (`time_2km`) that varied according to sample size (15, 20, 25, 30, 35, 40) and the effect of `condition` (1.25%, 2.5%, 3.75%, 5%, 6.25%, and 7.5% faster times in the social support condition, as compared to the control condition). Regarding the fixed effect of `session_number`, all simulations assumed 0.5% faster scores for the experimental conditions following the first (i.e., practice / conditioning effects). For all simulations, the intercept was set to 8 min, the random intercept standard deviation was set 0.5, and random slope standard deviations of 0.25 and 0.1 were set for `condition` and `session_number`, respectively. The correlation between random effects was set to 0 and the error term SD was set to 0.1.
+
+For each of the 36,000 simulated datasets, the statistical significance of the `condition` predictor variable on `time_2km` was assessed using the following hierarchical linear regression model. 
+
+```{cumulative work support model lmer}
+lmer(time_2km ~ condition + session_number + (1 | participant), data = data)
+```
+
+Social support condition (`condition`) was the main fixed effect of interest, and the order in which the experimental conditions were presented in relation to the control condition (`session_number`) was included as a fixed effect covariate. Participant (`participant`) was the level-two random effect. The model was fit using the `lme4` package (Bates et al., 2014). Data simulation indicated that model convergence was not possible with more complex random effects structures (e.g., random slopes for `condition`).
+
+The power analyses reported below were calculated as the frequency of the 1,000 _p_-values (in each combination of effect size and sample size) that were less than 0.05 for the `condition` _b_-coefficient that compared participants' 2 km times in the social support and control conditions.
+
+#### Power analysis results
+
+```{r power analysis for social support effect on cumulative work, echo = FALSE, fig.width = 10, fig.height = 7.5}
+
+#load the simulation data
+simulations = read.csv("../data/time_2km_social_support_power_analysis_data_sim.csv")
+
+#create dataset to plot power analysis for condition main effect
+sim_results_support_t = filter(simulations, effect == "fixed", term == "conditionsupport") %>%
+                          dplyr::group_by(condition_fixed_effect, participant_n) %>% 
+                          dplyr::summarise(power = mean(p.value < .05), .groups = "drop")
+
+#order the factor
+sim_results_support_t$condition_fixed_effect = ordered(sim_results_support_t$condition_fixed_effect, c("-0.1", "-0.2", "-0.3", "-0.4", "-0.5", "-0.6"))
+
+#plot power analysis
+pa_support_t = ggplot(aes(condition_fixed_effect, participant_n, fill = power), data = sim_results_support_t) +
+                geom_tile() +
+                geom_text(aes(label = sprintf("%.2f", power)), color = "black", size = 5) +
+                scale_fill_viridis_c(name = "Power",
+                                     limits = c(0, 1), 
+                                     breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+                                     labels = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+                scale_x_discrete(labels = c("-1.25%", "-2.5%", "-3.75%", "-5%", "-6.25%", "-7.5%")) + 
+                scale_y_continuous(breaks = c(15, 20, 25, 30, 35, 40)) +
+                xlab("Percentage decrease in 2 km rowing trial time in social support conditions") + 
+                ylab("Participant sample size") +
+                avenir_theme
+
+pa_support_t
+
+```
+
+Results suggest that at least 20 participants are needed to have sufficient power (0.79 to 0.88) to detect a 2.5% difference between the social support and control conditions in 2 km rowing trial times.
+
+### Interaction between social support and time on perceptions of effort and fatigue
+
+This power analysis is for hypotheses related to _both_ perceptions of effort and perceptions of fatigue; since the variables are measured in the same way, and our hypotheses are the same for each variable, we will only carry out calculations for perceptions of fatigue, as it is measured less often (thereby decreasing the power of hypothesis tests on perceived fatigue, as compared to perceived effort). As with the condition-wise effects on 2 km rowing times, we only conduct a power analysis to compare the social support condition in which participants see a photo of a support figure while rowing with the control condition, as this social support condition is hypothesised to have an equivalent or smaller effect than the social support condition involving seeing the photo of a support figure while rowing _and_ warming-up with a teammate.
+
+Study 1 of this project showed similar interactions between experimental conditions and time (measurement number) on participants' perceptions of effort (_b_ = -0.04) and fatigue (_b_ = -0.07). Perceptions of effort and fatigue increased over time in both conditions, but this increase was steeper in the control condition. A simulation of this data for perceived fatigue is plotted below for the 24 measures of perceived fatigue that will be measured over the 20-minute steady state rowing trial that makes up Segment 1 of the Exercise Task.
+
+```{r condition by time interaction on effort, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 7.5}
+
+#load the data
+data = read.csv("../data/social_support_and_time_interaction_on_effort_sample_plot_data.csv")
+
+#plot the model data
+fatigue_plot = ggplot(data = data, aes(x = as.factor(time), y = effort, fill = condition)) +
+                geom_boxplot() +
+                scale_y_continuous(breaks = c(seq(0,10,1)), limits = c(0, 10)) +
+                ylab("Perceived fatigue") +
+                xlab("Measurement number") + 
+                scale_fill_discrete(name = "Condition") +
+                avenir_theme
+
+fatigue_plot
+
+```
+
+#### Data simulations for power analysis
+
+Power analyses were carried out using the `faux` package in R (DeBruine, 2021). Using the dataset described above as a reference, 30,000 simulated sample datasets were created. This was done through sampling different simulated experimental results for the perceived effort variable (`effort`) that varied according to sample size (15, 20, 25, 30, 35, 40) and the size of the experimental condition (`condition`) by time (`measurement_number`) interaction (model _b_-coefficients of -0.02, -0.03, -0.04, -0.05, -0.06). 
+
+All simulations had the same fixed effects for `condition` (_b_ = 0.010), `measurement_number` (_b_ = 0.43) , and `session_number` (_b_ = 0.004), an intercept of 2, a random intercept standard deviation of 0.75, and a random slope standard deviation of 0.3 for `condition`, 0.15 for `session_number` and `measurement_number`, and of 0.03 for the `condition` by `measurement_number` interaction. The correlation between random effects was set to 0 and the error term SD was set to 0.1.
+
+For each of the 30,000 simulated datasets, the statistical significance of the `condition` by `measurement_number` interaction on `effort` was assessed using the following hierarchical linear regression model. 
+
+```
+lmer(fatigue ~ condition * measurement_number + session_number + (1 | participant), data = data)
+```
+
+The `condition` by `measurement_number` interaction effect was the main effect of interest, and the order in which the experimental conditions were presented (`session_number`) was included as a fixed effect covariate. Participant (`participant`) was the level-two random effect. The model was fit using the `lme4` package. Data simulation indicated that model convergence was not possible with more complex random effects structures (e.g., random slopes for `condition`).
+
+The power analysis reported below were calculated as the frequency of the 1,000 _p_-values (in each combination of effect size and sample size) that were less than 0.05 for the `condition` by `measurement_number` interaction _b_-coefficient with perceived effort (`fatigue`) as the outcome variable.
+
+#### Power analysis results
+
+```{r power analysis for experimental condition by time interaction effect on perceived effort, echo = FALSE, fig.width = 10, fig.height = 7.5}
+
+#load the simulation data
+simulations = read.csv("../data/fatigue_social_support_time_interaction_power_analysis_data_sim.csv")
+
+#create dataset to plot power analysis for social support by early life adversity effect on time to exhaustion
+fatigue_support_time_int_simulation = filter(simulations, effect == "fixed", term == "conditionsupport:time") %>% 
+                                      dplyr::group_by(cond_time_interaction_fixed_effect, participant_n) %>% 
+                                      dplyr::summarise(power = mean(p.value < .05), .groups = "drop")
+
+#order the factor
+fatigue_support_time_int_simulation$cond_ela_interaction_fixed_effect = ordered(fatigue_support_time_int_simulation$cond_time_interaction_fixed_effect, 
+                                                                         c("-0.02", "-0.03", "-0.04", "-0.05", "-0.06"))
+
+#plot power analysis
+x_axis_text = expression(bold(paste("Model ", bolditalic("b"), "-coefficient for experimental condition by measurement number interaction on perceived fatigue")))
+fatigue_support_time = ggplot(aes(cond_ela_interaction_fixed_effect, participant_n, fill = power), data = fatigue_support_time_int_simulation) +
+                        geom_tile() +
+                        geom_text(aes(label = sprintf("%.2f", power)), color = "black", size = 5) +
+                        scale_y_continuous(breaks = c(15, 20, 25, 30, 35, 40)) +
+                        scale_fill_viridis_c(name = "Power",
+                                           limits = c(0, 1), 
+                                           breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+                                           labels = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+                      xlab(x_axis_text) + 
+                      ylab("Participant sample size") +
+                      avenir_theme
+
+fatigue_support_time
+
+```
+
+Results suggest that at least 25 participants are needed to have sufficient power (0.80) to detect a `condition` by `measurement_number` interaction on perceived fatigue (`fatigue`) that has a _b_-coefficient -0.04 (the smallest effect observed for the `condition` by `measurement_number` interactions on perceived effort and perceived fatigue in Study 1).
+
+### Citations
+
+Bates, D., Maechler, M., Bolker, B., & Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4. _R package version_, _1_(7), 1-23. 
+
+DeBruine L (2021). _faux: Simulation for Factorial Designs_. doi: 10.5281/zenodo.2669586, R package version 1.1.0, https://debruine.github.io/faux/.
